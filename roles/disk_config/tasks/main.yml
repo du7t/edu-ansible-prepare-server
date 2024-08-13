@@ -1,0 +1,4 @@
+---
+- name: Sorry message
+  ansible.builtin.debug:
+    msg: "Wasn't able to do encryption without breaking after reboot"

@@ -1,0 +1,7 @@
+---
+- hosts: all
+  become: yes
+  roles:
+    - network_config
+    - cpu_config
+    - disk_config

@@ -1,0 +1,55 @@
+---
+- name: Check if CPU governor path exists
+  ansible.builtin.stat:
+    path: /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+  register: cpufreq_stat
+
+- name: Set CPU governor to performance mode if path exists
+  ansible.builtin.shell: |
+    for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+      echo 'performance' > $cpu
+    done
+  when: cpufreq_stat.stat.exists
+  become: yes
+
+- name: Display message if system does not support P-states
+  ansible.builtin.debug:
+    msg: "System does not support P-states"
+  when: not cpufreq_stat.stat.exists
+
+- name: Disable C-states by updating GRUB configuration
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX='
+    line: 'GRUB_CMDLINE_LINUX="intel_idle.max_cstate=0"'
+    backup: yes
+  register: grub_config
+  become: yes
+
+- name: Update GRUB bootloader
+  ansible.builtin.command:
+    cmd: update-grub
+  become: yes
+  when: grub_config.changed
+  # notify: Reboot the system to apply changes
+
+- name: Get the number of CPU cores
+  ansible.builtin.command:
+    cmd: nproc
+  register: cpu_cores
+  changed_when: false
+
+- name: Display the number of CPU cores
+  ansible.builtin.debug:
+    msg: "Number of CPU cores: {{ cpu_cores.stdout }}"
+
+- name: Check if Hyper-Threading is enabled
+  ansible.builtin.slurp:
+    src: /sys/devices/system/cpu/smt/active
+  register: ht_status
+
+
+- name: Display Hyper-Threading status
+  ansible.builtin.debug:
+    msg: >
+      Hyper-Threading is {{ 'enabled' if ht_status['content'] | b64decode | trim == '1' else 'disabled' }}

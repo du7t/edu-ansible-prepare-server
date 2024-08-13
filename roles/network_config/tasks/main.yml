@@ -1,0 +1,24 @@
+---
+
+- name: Display current active interface
+  ansible.builtin.debug:
+    msg: "Current active interface is {{ ansible_default_ipv4.interface }}"
+
+- name: Rename active interface in Netplan config
+  ansible.builtin.command:
+    cmd: >
+      sed -i 's/set-name: {{ ansible_default_ipv4.interface }}/set-name: {{ new_interface_name }}/' /etc/netplan/50-cloud-init.yaml
+  notify:
+    - Apply Netplan configuration
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Display information about the renamed interface
+  ansible.builtin.command:
+    cmd: ip addr show {{ new_interface_name }}
+  register: interface_info
+
+- name: Show interface information
+  ansible.builtin.debug:
+    msg: "{{ interface_info.stdout }}"

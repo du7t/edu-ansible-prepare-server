@@ -1,0 +1,4 @@
+- name: Reboot the system to apply changes
+  ansible.builtin.reboot:
+    msg: "Rebooting to apply changes"
+  become: yes
