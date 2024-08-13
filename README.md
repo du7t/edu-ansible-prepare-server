@@ -4,6 +4,6 @@ Playbook prepares the server by encrypting disks, disabling C-state, switching C
 
 ## How to Use
 
-1. Modify the inventory file (`inventory`) with target hosts
-2. Update path to ssh key: in (`ansible.cfg`)
+1. Modify the inventory file `inventory` with target hosts
+2. Update path to ssh key in `ansible.cfg`
 3. Run the playbook: ansible-playbook playbook.yml
