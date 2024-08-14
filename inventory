@@ -1,2 +1,14 @@
-[all]
+[ubuntu]
 your_hosts
+
+[ubuntu:vars]
+first_drive_path=/dev/xvda
+first_drive_name=xvda
+first_drive_partition_number_to_encrypt=14
+first_drive_partition_name_to_encrypt=xvda14
+second_drive_path=/dev/xvdb
+second_drive_name=xvdb
+second_drive_partition_number_to_encrypt=1
+second_drive_partition_name_to_encrypt=xvdb1
+second_drive_partition_size=1GiB
+crypto_device_mapper_name=mycrypto

@@ -1,4 +1,49 @@
 ---
-- name: Sorry message
-  ansible.builtin.debug:
-    msg: "Wasn't able to do encryption without breaking after reboot"
+
+- name: Create a primary partition on 2nd drive
+  ansible.builtin.parted:
+    device: "{{ second_drive_path }}"
+    number: "{{ second_drive_partition_number_to_encrypt }}"
+    state: present
+    part_type: primary
+    part_end: "{{ second_drive_partition_size }}"
+  register: partition
+
+- name: Display created partition information
+  debug:
+    var: partition
+
+- name: Copy luks_keyfile to the target system
+  ansible.builtin.copy:
+    src: luks_keyfile
+    dest: "/etc/luks_keyfile"
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Create LUKS container on 2nd drive
+  community.crypto.luks_device:
+    device: "{{ second_drive_path }}{{ second_drive_partition_number_to_encrypt }}"
+    state: "opened"
+    name: "{{ crypto_device_mapper_name }}{{ second_drive_partition_number_to_encrypt }}"
+    keyfile: "/etc/luks_keyfile"
+
+- name: Get 1st drive partition size
+  set_fact:
+    first_drive_partition_name_to_encrypt_size_bytes: "{{ ansible_devices[first_drive_name]['partitions'][first_drive_partition_name_to_encrypt]['size'] | human_to_bytes }}"
+
+- name: Check 1st drive partition size met required for LUKS
+  assert:
+    that:
+      - "{{ first_drive_partition_name_to_encrypt_size_bytes }} > {{ luks_minimum_partition_size_in_bytes }}"
+    fail_msg: >
+      "Partition does not have required size for LUKS: {{ luks_minimum_partition_size_in_bytes }}"
+      "Current size: {{ first_drive_partition_name_to_encrypt_size_bytes }}"
+
+- name: Create LUKS container on 1st drive
+  community.crypto.luks_device:
+    device: "{{ first_drive_path }}{{ first_drive_partition_number_to_encrypt }}"
+    state: "opened"
+    name: "{{ crypto_device_mapper_name }}{{ first_drive_partition_number_to_encrypt }}"
+    keyfile: "/etc/luks_keyfile"
+  
